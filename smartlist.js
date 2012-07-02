@@ -5,12 +5,12 @@
 // @todo handle args to filters
 // @todo currently uses jQuery, underscore and Handlebars. Should be able to improve this
 
-(function($) {
+var SmartList = (function($) {
 	var picker = {
-		element: $('#picker'), // @todo get this at creation
+		element: [], // @todo get this at creation
 		item: { // example item
 			name: "Foo",
-			type: "fooberry",
+			type: "fooberry"
 		},
 		items: [],
 		activeItems: [],
@@ -33,7 +33,11 @@
 			sorters: {}
 		},
 
-		init: function(options, items) {
+		init: function(selector, options, items) {
+			var self = this;
+
+			this.element = $(selector);
+
 			// overwrite any defaults
 			$.extend(true, this.options, options);
 
@@ -52,7 +56,8 @@
 		 * Takes user filters and search terms and applies them to list
 		 */
 		update: function() {
-			var filters = this.element.find('span.filter').data('filter'),
+			var self = this,
+				filters = this.element.find('span.filter').data('filter'),
 				search = $.trim(this.element.find('.search').val());
 
 			if (search != undefined && search != '') {
@@ -64,7 +69,7 @@
 			this.activeItems = this.items;
 
 			$.each(filters, function(key, filter) {
-				this.activeItems = this.applyFilter(filter); // @todo allow us to apply args of some kind
+				self.activeItems = self.applyFilter(filter); // @todo allow us to apply args of some kind
 			});
 
 			// @todo show activeItems and hide inactive ones
@@ -77,7 +82,7 @@
 				var row = $('<li>' + template(item) + '</li>').attr('data-index', key);
 				$box.find('ul').append(row);
 			});
-
+			
 			this.element.append($box);
 		},
 
@@ -85,6 +90,27 @@
 			// @todo move this template somewhere else
 			var template = Handlebars.compile('<div class="picker"><div class="header">{{title}}</div><div class="body"><div class="search"><input type="text" autocomplete="off" autocorrect="off"></div><div><ul></ul></div></div></div>');
 			return $(template(this.options));
+		},
+
+		/**
+		 * Add a filter to the search bar and call update()
+		 * @todo prepend to input, append to existing terms
+		 */
+		addFilter: function(filter) {
+			var $term = $('<span>'+filter+'</span>').addClass('filter').data('filter', filter);
+			this.element.find(".search").prepend($term);
+
+			this.update();
+		},
+
+		/**
+		 * Remove a filter term from the search bar and call update()
+		 * @todo remove only the filter we are looking for
+		 */
+		removeFilter: function(filter) {
+			this.element.find(".search").remove($('span'));
+
+			this.update();
 		},
 
 		/**
@@ -108,4 +134,18 @@
 			this.element.find('ul li[data-index='+item._id+']').show();
 		}
 	};
-})(jQuery)
+
+	return picker;
+})(jQuery);
+
+$(document).ready(function() {
+	SmartList.init('#smartlist', {}, [
+		{ // example item
+			name: "Foo",
+			type: "fooberry"
+		}, {
+			name: "Bar",
+			type: "fooberry"
+		}
+	]);
+});
